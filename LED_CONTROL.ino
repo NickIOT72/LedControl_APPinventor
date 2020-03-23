@@ -122,15 +122,31 @@ void DataReception()
     Serial.print(": ");
     Serial.println(server.arg(i));
     //LED
-    if (server.argName(i) == "Status")
+    if (server.argName(i) == "Btn")
     {
-      if (server.arg(i) == "1")
+      if (server.arg(i) == "Red")
       {
-        digitalWrite(PinGREEN,HIGH);
-      }
-      else if (server.arg(i) == "0")
-      {
+        digitalWrite(PinRED,HIGH);
         digitalWrite(PinGREEN,LOW);
+        digitalWrite(PinBLUE,LOW);
+      }
+      else if (server.arg(i) == "Green")
+      {
+        digitalWrite(PinRED,LOW);
+        digitalWrite(PinGREEN,HIGH);
+        digitalWrite(PinBLUE,LOW);
+      }
+      else if (server.arg(i) == "Blue")
+      {
+        digitalWrite(PinRED,LOW);
+        digitalWrite(PinGREEN,LOW);
+        digitalWrite(PinBLUE,HIGH);
+      }
+      else if (server.arg(i) == "None")
+      {
+        digitalWrite(PinRED,LOW);
+        digitalWrite(PinGREEN,LOW);
+        digitalWrite(PinBLUE,LOW);
       }
     }
     // Switch
