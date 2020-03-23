@@ -13,16 +13,19 @@ const char* password = STAPSK;
 
 ESP8266WebServer server(80);
 
-#define led D0
+//Pins
+#define PinRED D1
+#define PinBLUE D2
+#define PinGREEN D3
 
-void handleRoot() {
-  digitalWrite(led, 1);
-  server.send(200, "text/plain", "hello from esp8266!");
-  digitalWrite(led, 0);
-}
+boolean AllowRGB = false;
+
+//PWM LED
+int REDPWM = 0;
+int GREENPWM = 0;
+int BLUEPWM = 0;
 
 void handleNotFound() {
-  digitalWrite(led, 1);
   String message = "File Not Found\n\n";
   message += "URI: ";
   message += server.uri();
@@ -35,12 +38,15 @@ void handleNotFound() {
     message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
   server.send(404, "text/plain", message);
-  digitalWrite(led, 0);
 }
 
 void setup(void) {
-  pinMode(led, OUTPUT);
-  digitalWrite(led, 0);
+  pinMode(PinGREEN, OUTPUT);
+  pinMode(PinBLUE, OUTPUT);
+  pinMode(PinRED, OUTPUT);
+  digitalWrite(PinRED, 0);
+  digitalWrite(PinBLUE, 0);
+  digitalWrite(PinGREEN, 0);
   Serial.begin(115200);
   IPAddress ip(192,168,43,90);
   IPAddress gateway(192,168,43,1);
@@ -64,8 +70,9 @@ void setup(void) {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
-  server.on("/ON", LEDON);
-  server.on("/OFF", LEDOFF);
+  server.on("/LED", LED);
+  server.on("/RGB", RGB);
+  server.on("/SWITCH", SWITCH);
 
   server.onNotFound(handleNotFound);
   server.begin();
@@ -74,18 +81,96 @@ void setup(void) {
 
 void loop(void) {
   server.handleClient();
-  MDNS.update();
 }
 
 
-void LEDON()
+void LED()
 {
-  digitalWrite(led,HIGH);
+  //Serial.println("HOLA");
+  DataReception();
   server.send(200, "text/plane","OK");
 }
 
-void LEDOFF()
+void RGB()
 {
-  digitalWrite(led,LOW);
+  DataReception();
+  if (AllowRGB)
+  {
+    analogWrite(PinRED, REDPWM);
+    analogWrite(PinGREEN, GREENPWM);
+    analogWrite(PinBLUE, BLUEPWM);
+  }
   server.send(200, "text/plane","OK");
+}
+
+void SWITCH()
+{
+  DataReception();
+  server.send(200, "text/plane","OK");
+}
+
+void DataReception()
+{
+  Serial.println("Number of Arguments: ");
+  Serial.println(server.args());
+  for (int i = 0; i < server.args(); i++)
+  {
+    Serial.print("Arg num");
+    Serial.print(i);
+    Serial.print(" -> ");
+    Serial.print(server.argName(i));
+    Serial.print(": ");
+    Serial.println(server.arg(i));
+    //LED
+    if (server.argName(i) == "Status")
+    {
+      if (server.arg(i) == "1")
+      {
+        digitalWrite(PinGREEN,HIGH);
+      }
+      else if (server.arg(i) == "0")
+      {
+        digitalWrite(PinGREEN,LOW);
+      }
+    }
+    // Switch
+    else if (server.argName(i) == "Sw")
+    {
+      if (server.arg(i) == "ON")
+      {
+        AllowRGB = true;
+        REDPWM = 0;
+        GREENPWM = 0;
+        BLUEPWM = 0;
+        analogWrite(PinRED, REDPWM);
+        analogWrite(PinGREEN, GREENPWM);
+        analogWrite(PinBLUE, BLUEPWM);
+        digitalWrite(PinGREEN,LOW);
+        
+      }
+      else if (server.arg(i) == "OFF")
+      {
+        AllowRGB = false;
+        REDPWM = 0;
+        GREENPWM = 0;
+        BLUEPWM = 0;
+        analogWrite(PinRED, REDPWM);
+        analogWrite(PinGREEN, GREENPWM);
+        analogWrite(PinBLUE, BLUEPWM);
+      }
+    }
+    //LED RGB
+    else if (server.argName(i) == "RED")
+    {
+        REDPWM = server.arg(i).toInt();
+    }
+    else if (server.argName(i) == "GREEN")
+    {
+        GREENPWM = server.arg(i).toInt();
+    }
+    else if (server.argName(i) == "BLUE")
+    {
+        BLUEPWM = server.arg(i).toInt();
+    }
+  }
 }
